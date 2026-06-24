@@ -33,15 +33,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <div>
                     <label for="filter-name" class="block text-sm font-medium text-gray-700 mb-1">ค้นหาตามชื่อ</label>
-                    <input type="text" id="filter-name" placeholder="พิมพ์ชื่อนักศึกษา" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
+                    <input type="text" id="filter-name" placeholder="พิมพ์ชื่อพนักงาน" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                 </div>
                 <div>
                     <label for="filter-department" class="block text-sm font-medium text-gray-700 mb-1">ค้นหาตามแผนก</label>
-                    <input type="text" id="filter-department" placeholder="พิมพ์รหัสนักศึกษา" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
+                    <input type="text" id="filter-department" placeholder="พิมพ์ชื่อแผนก" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                 </div>
                 <div>
                     <label for="filter-employeeID" class="block text-sm font-medium text-gray-700 mb-1">ค้นหาตามรหัสพนักงาน</label>
-                    <input type="text" id="filter-employeeID" placeholder="พิมพ์ชั้นปีนักศึกษา" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
+                    <input type="text" id="filter-employeeID" placeholder="พิมพ์รหัสพนักงาน" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                 </div>
                 <div class="flex flex-col">
                     <label class="block text-sm font-medium text-gray-700 mb-1">รีเซต</label>
@@ -87,15 +87,15 @@
                         <input type="text" id="edit-userID" class="w-full rounded-md border-gray-300 p-2 bg-gray-100 cursor-not-allowed" disabled>
                     </div>
                     <div>
-                        <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">ชื่อนักศึกษา</label>
+                        <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">ชื่อพนักงาน</label>
                         <input type="text" id="edit-name" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                     </div>
                     <div>
-                        <label for="edit-employeeID" class="block text-sm font-medium text-gray-700 mb-1">รหัสนักศึกษา</label>
+                        <label for="edit-employeeID" class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน</label>
                         <input type="text" id="edit-employeeID" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                     </div>
                     <div>
-                        <label for="edit-department" class="block text-sm font-medium text-gray-700 mb-1">ชั้นปี</label>
+                        <label for="edit-department" class="block text-sm font-medium text-gray-700 mb-1">แผนก</label>
                         <input type="text" id="edit-department" class="w-full rounded-md border-gray-300 p-2 focus:border-black focus:ring-black">
                     </div>
                     <div>
@@ -240,7 +240,7 @@
 
                 const tr = document.createElement("tr");
                 tr.className = "hover:bg-gray-50 transition duration-150 ease-in-out"; // Added hover effect
-                // Columns: 0:ID, 1:userIDline, 2:ชื่อ, 3:รหัสนักศึกษา, 4:ชั้นปี, 5:รูป, 6:บันทึกเวลาล่าสุด,
+                // Columns: 0:ID, 1:userIDline, 2:ชื่อ, 3:รหัสพนักงาน, 4:แผนก, 5:รูป, 6:บันทึกเวลาล่าสุด,
                 // 7:ลาพักร้อน, 8:ลากิจ, 9:ลาป่วย, 10:OT, 11:กำหนดเข้างาน, 12:กำหนดออกงาน
                 const id = row[0] || "-";
                 const name = row[2] || "ไม่ระบุชื่อ";

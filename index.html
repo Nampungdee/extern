@@ -222,6 +222,7 @@
     const fullAddressInput = document.querySelector("#fullAddressInput");
     const userId = document.querySelector("#userId");
     const preview = document.getElementById("preview");
+    let uploadedImageUrl = "";
     document.addEventListener("DOMContentLoaded", function () {
       const video = document.getElementById("camera-preview");
       const startCameraBtn = document.getElementById("start-camera-btn");
@@ -331,18 +332,23 @@
             user: userId.value,
           };
           fetch(url, { method: "POST", body: JSON.stringify(obj) })
-            .then((response) => response.text())
-            .then((data) => {
-              Swal.close();
-              Swal.fire({
-                title: "สำเร็จ!",
-                text: "บันทึกข้อมูลของคุณเรียบร้อย!",
-                icon: "success",
-                confirmButtonText: "ปิด",
-              }).then(() => {
-                sendFlexMessage();
-              });
-            })
+  .then((response) => response.json())
+  .then((data) => {
+
+    uploadedImageUrl = data.imageUrl || "";
+
+    Swal.close();
+
+    Swal.fire({
+      title: "สำเร็จ!",
+      text: "บันทึกข้อมูลของคุณเรียบร้อย!",
+      icon: "success",
+      confirmButtonText: "ปิด",
+    }).then(() => {
+      sendFlexMessage(uploadedImageUrl);
+    });
+
+  })
             .catch((error) => {
               Swal.close();
               Swal.fire({
@@ -358,15 +364,31 @@
         }
       });
     }
-    async function sendFlexMessage() {
+    async function sendFlexMessage(imageUrl) {
       let jobColor = "#0D9608FF";
-      const flexMessage = {
-        type: "flex",
-        altText: "จดบันทึกเวลางาน",
-        contents: {
-          type: "bubble",
-          direction: "ltr",
-          body: {
+     const flexMessage = {
+  type: "flex",
+  altText: "จดบันทึกเวลางาน",
+  contents: {
+    type: "bubble",
+    direction: "ltr",
+
+    hero: {
+      type: "image",
+      url: imageUrl,
+      size: "full",
+      aspectRatio: "20:13",
+      aspectMode: "cover",
+      action: {
+        type: "uri",
+        uri: imageUrl
+      }
+    },
+
+    body: {
+      type: "box",
+
+  body: {
             type: "box",
             layout: "vertical",
             spacing: "md",

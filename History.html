@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
   <script src="https://unpkg.com/heroicons@2.0.13/dist/heroicons.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     /* CSS สำหรับแสดงสถานะการโหลด */
     #loading {
@@ -24,53 +25,65 @@
       <input type="hidden" id="userId" name="userId">
       <input type="hidden" id="displayName" name="displayName">
 
-      <div id="main-info" class="bg-slate-100 rounded shadow-sm p-4 mb-6 text-sm flex items-center justify-between">
-        <div class="flex flex-col space-y-2">
-          <div class="flex items-center">
-            <strong>ชื่อ-นามสกุล:</strong>
-            <span id="name-info" class="font-medium ml-1"></span>
+      <div id="pdf-content" class="bg-white p-1">
+        <h2 class="text-center font-bold text-lg mb-4 text-slate-800 hidden pdf-only">รายงานประวัติการบันทึกเวลา</h2>
+
+        <div id="main-info" class="bg-slate-100 rounded shadow-sm p-4 mb-4 text-sm flex items-center justify-between">
+          <div class="flex flex-col space-y-2">
+            <div class="flex items-center">
+              <strong>ชื่อ-นามสกุล:</strong>
+              <span id="name-info" class="font-medium ml-1"></span>
+            </div>
+            <div class="flex items-center">
+              <strong>รหัสประจำตัว นสพ.:</strong>
+              <span id="employee-id-info" class="font-medium ml-1"></span>
+            </div>
           </div>
-          <div class="flex items-center">
-            <strong>รหัสประจำตัว นสพ.:</strong>
-            <span id="employee-id-info" class="font-medium ml-1"></span>
+          <div class="flex-shrink-0 ml-4">
+            <img id="avatar-info" src="https://placehold.co/150" alt="Profile" class="w-16 h-16 rounded-full border-2 border-slate-300 object-cover hidden">
           </div>
         </div>
-        <div class="flex-shrink-0 ml-4">
-          <img id="avatar-info" src="https://placehold.co/150" alt="Profile" class="w-16 h-16 rounded-full border-2 border-slate-300 object-cover hidden">
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 rounded shadow-sm">
+            <thead class="rounded-t-lg">
+              <tr class="text-slate-100 text-center text-xs">
+                <th class="py-2 px-4 bg-slate-800 rounded-tl-lg">สถานะ</th>
+                <th class="py-2 px-4 bg-slate-800">หมายเหตุ</th>
+                <th class="py-2 px-4 bg-slate-800 rounded-tr-lg">วันที่เวลา</th>
+              </tr>
+            </thead>
+            <tbody id="data-table" class="text-slate-600 text-xs">
+              </tbody>
+          </table>
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 rounded shadow-sm">
-          <thead class="rounded-t-lg">
-            <tr class="text-slate-100 text-center text-xs">
-              <th class="py-2 px-4 bg-slate-800 rounded-tl-lg">สถานะ</th>
-              <th class="py-2 px-4 bg-slate-800 ">หมายเหตุ</th>
-              <th class="py-2 px-4 bg-slate-800 rounded-tr-lg">วันที่เวลา</th>
-            </tr>
-          </thead>
-          <tbody id="data-table" class="text-slate-600 text-xs">
-            </tbody>
-        </table>
+      <div class="flex flex-col space-y-2 mt-4">
+        <button onclick="generatePDF()" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center space-x-2 shadow transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span>สร้างไฟล์ PDF</span>
+        </button>
+        
+        <div id="pagination-controls" class="text-sm flex flex-wrap justify-center"></div>
       </div>
 
-      <div id="pagination-controls" class="mt-4 text-sm flex flex-wrap justify-center"></div>
       <div id="loading" class="text-center text-slate-800 mt-4 text-sm">กำลังโหลด...</div>
     </div>
   </div>
 
   <script src="Config.js"></script>
   <script>
-    // จำนวนรายการที่จะแสดงต่อหน้า
     const itemsPerPage = 10;
     let currentPage = 1;
+    let globalFilteredData = []; // เก็บข้อมูลที่กรองแล้วสำหรับใช้ออกรายงาน PDF ทั้งหมด
 
-    // เริ่มต้นเมื่อโหลดหน้าเสร็จ
     window.onload = function () {
       initializeLiff();
     };
 
-    // ฟังก์ชันเริ่มต้น LIFF
     async function initializeLiff() {
       await liff.init({ liffId: `${LIFF_HISTORY}` });
       if (liff.isLoggedIn()) {
@@ -80,27 +93,18 @@
       }
     }
 
-    // ฟังก์ชันดึงข้อมูลโปรไฟล์ผู้ใช้
     async function getUserProfile() {
       try {
         const profile = await liff.getProfile();
         document.getElementById('userId').value = profile.userId;
         document.getElementById('displayName').value = profile.displayName;
         
-        // ดึงรูปภาพโปรไฟล์จาก LINE และแสดงผล
-        if (profile.pictureUrl) {
-          const avatarImg = document.getElementById('avatar-info');
-          avatarImg.src = profile.pictureUrl;
-          avatarImg.classList.remove('hidden'); // แสดงรูปภาพเมื่อโหลด URL สำเร็จ
-        }
-
         fetchData(profile.userId);
       } catch (error) {
         console.error('Error getting profile data:', error);
       }
     }
 
-    // ฟังก์ชันดึงข้อมูลจาก Web App
     async function fetchData(userId) {
       document.getElementById('loading').style.display = 'block';
       try {
@@ -110,16 +114,23 @@
         }
         const data = await response.json();
         console.log('Fetched data:', data);
-        const filteredData = data.filter(row => row[11] === userId); // กรองข้อมูลตาม userId (คอลัมน์ที่ 11)
+        globalFilteredData = data.filter(row => row[11] === userId); // กรองข้อมูลตาม userId (คอลัมน์ที่ 11)
 
-        // แสดงชื่อและรหัสพนักงานจากแถวสุดท้าย
-        if (filteredData.length > 0) {
-          const lastRow = filteredData[filteredData.length - 1];
-          document.getElementById('name-info').textContent = lastRow[2];
-          document.getElementById('employee-id-info').textContent = lastRow[3];
+        if (globalFilteredData.length > 0) {
+          const lastRow = globalFilteredData[globalFilteredData.length - 1];
+          document.getElementById('name-info').textContent = lastRow[2]; // คอลัมน์ C (ชื่อ นามสกุล)
+          document.getElementById('employee-id-info').textContent = lastRow[3]; // คอลัมน์ D (รหัสประจำตัวนิสิต)
+          
+          // ดึงลิงก์รูปภาพโปรไฟล์จากคอลัมน์ F (ดัชนีที่ 5) ของ Google Sheet
+          const sheetImageUrl = lastRow[5]; 
+          if (sheetImageUrl && sheetImageUrl.toString().trim().startsWith('http')) {
+            const avatarImg = document.getElementById('avatar-info');
+            avatarImg.src = sheetImageUrl;
+            avatarImg.classList.remove('hidden');
+          }
         }
 
-        buildTable('data-table', filteredData);
+        renderTablePage();
       } catch (error) {
         console.error('Error fetching data:', error);
         document.getElementById('data-table').innerHTML = '<tr><td colspan="3" class="text-center">เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาตรวจสอบคอนโซลสำหรับรายละเอียดเพิ่มเติม</td></tr>';
@@ -128,7 +139,6 @@
       }
     }
 
-    // ฟังก์ชันจัดรูปแบบวันที่
     function formatDate(dateString) {
       const date = new Date(dateString);
       const day = String(date.getDate()).padStart(2, '0');
@@ -137,7 +147,6 @@
       return `${day}/${month}/${year}`;
     }
 
-    // ฟังก์ชันจัดรูปแบบเวลา
     function formatTime(timeString) {
       const date = new Date(timeString);
       const hours = String(date.getHours()).padStart(2, '0');
@@ -145,25 +154,29 @@
       return `${hours}:${minutes}`;
     }
 
-    // ฟังก์ชันสร้างตารางแสดงข้อมูล
-    function buildTable(tableId, values) {
+    // ฟังก์ชันจัดการแบ่งหน้าการแสดงผลตารางหลัก
+    function renderTablePage() {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const reversedValues = globalFilteredData.slice().reverse();
+      const pageItems = reversedValues.slice(startIndex, endIndex);
+      
+      buildTable('data-table', pageItems);
+      updatePaginationControls(globalFilteredData.length);
+    }
+
+    function buildTable(tableId, targetRows) {
       const table = document.getElementById(tableId);
       table.innerHTML = '';
 
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const reversedValues = values.slice().reverse(); // แสดงข้อมูลล่าสุดก่อน
-
-      reversedValues.slice(startIndex, endIndex).forEach(row => {
+      targetRows.forEach(row => {
         const tr = document.createElement('tr');
         tr.classList.add('border-b', 'hover:bg-slate-100');
 
-        // ดึงค่าจากคอลัมน์ 4, 12 และ 13
         const col4 = row[4];
         const col12 = row[12];
         const col13 = row[13];
 
-        // รวมข้อความในรูปแบบ "row4(row12 row13 น.)" หากมีข้อมูลในคอลัมน์ 12 และ 13
         let statusText = col4;
         if (col12 && col12.trim() !== "" && col13 && col13.toString().trim() !== "") {
           statusText = `${col4}(${col12} ${col13} น.)`;
@@ -173,7 +186,6 @@
           statusText = `${col4}(${col13} น.)`;
         }
 
-        // กำหนดสีสำหรับสถานะ "เข้างาน" (สีเขียว) และ "ออกงาน" (สีแดง)
         let statusColor = 'gray';
         let dotColor = 'gray';
         if (col4 === 'เข้างาน') {
@@ -184,7 +196,6 @@
           dotColor = 'red';
         }
 
-        // สร้างเซลล์สำหรับสถานะ โดยจัดข้อความให้อยู่กลาง
         let td = document.createElement('td');
         td.classList.add('py-2', 'px-4', 'whitespace-nowrap');
         td.innerHTML = `
@@ -195,13 +206,11 @@
         `;
         tr.appendChild(td);
 
-        // เซลล์สำหรับหมายเหตุ (จัดข้อความให้อยู่กลาง)
         td = document.createElement('td');
         td.classList.add('py-2', 'px-4', 'whitespace-nowrap', 'text-center');
         td.textContent = row[5];
         tr.appendChild(td);
 
-        // เซลล์สำหรับวันที่และเวลา (จัดข้อความให้อยู่กลาง)
         td = document.createElement('td');
         td.classList.add('py-2', 'px-4', 'whitespace-nowrap', 'text-center');
         td.innerHTML = `
@@ -212,11 +221,8 @@
 
         table.appendChild(tr);
       });
-
-      updatePaginationControls(values.length);
     }
 
-    // ฟังก์ชันอัปเดตตัวควบคุมการแบ่งหน้า
     function updatePaginationControls(totalItems) {
       const totalPages = Math.ceil(totalItems / itemsPerPage);
       const paginationControls = document.getElementById('pagination-controls');
@@ -229,18 +235,11 @@
         pageButton.textContent = i;
         pageButton.addEventListener('click', () => {
           currentPage = i;
-          fetchData(document.getElementById('userId').value);
+          renderTablePage();
         });
         pageButton.classList.add(
-          'py-1',
-          'px-3',
-          'm-1',
-          'border',
-          'rounded',
-          'text-sm',
-          'focus:outline-none',
-          'focus:ring-2',
-          'focus:ring-blue-500'
+          'py-1', 'px-3', 'm-1', 'border', 'rounded', 'text-sm',
+          'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'
         );
         if (i === currentPage) {
           pageButton.classList.add('bg-black', 'text-white');
@@ -249,6 +248,52 @@
         }
         paginationControls.appendChild(pageButton);
       }
+    }
+
+    // ฟังก์ชันสร้างและดาวน์โหลดไฟล์ PDF
+    function generatePDF() {
+      // แสดงข้อความแจ้งเตือนขณะเตรียมไฟล์
+      Swal.fire({
+        title: 'กำลังจัดเตรียมไฟล์ PDF...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // ดึง element หลักที่ห่อหุ้มตารางอยู่
+      const element = document.getElementById('pdf-content');
+      
+      // แสดงหัวข้อรายงานเฉพาะใน PDF
+      const pdfTitle = element.querySelector('.pdf-only');
+      if(pdfTitle) pdfTitle.classList.remove('hidden');
+
+      // แสดงประวัติทั้งหมดในตาราง (ไม่แบ่งหน้าชั่วคราวเพื่อให้ PDF มีข้อมูลครบถ้วน)
+      const reversedValues = globalFilteredData.slice().reverse();
+      buildTable('data-table', reversedValues);
+
+      // กำหนดค่าคอนฟิกให้กับ html2pdf
+      const opt = {
+        margin:       10,
+        filename:     `ประวัติการลงเวลา_${document.getElementById('name-info').textContent || 'user'}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true }, // เปิด useCORS เพื่อให้ดึงภาพข้ามเซิร์ฟเวอร์มาแสดงได้
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // เริ่มสร้าง PDF
+      html2pdf().set(opt).from(element).save().then(() => {
+        // คืนค่าตารางกลับไปเป็นแบบแบ่งหน้าเหมือนเดิมเมื่อทำงานเสร็จ
+        renderTablePage();
+        if(pdfTitle) pdfTitle.classList.add('hidden');
+        Swal.close();
+      }).catch(err => {
+        console.error('PDF generation error:', err);
+        renderTablePage();
+        if(pdfTitle) pdfTitle.classList.add('hidden');
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึก PDF ได้', 'error');
+      });
     }
   </script>
 </body>

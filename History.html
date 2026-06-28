@@ -5,13 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ประวัติการบันทึก</title>
-  <!-- นำเข้า Tailwind CSS สำหรับการออกแบบ UI -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- นำเข้า SweetAlert2 สำหรับแสดงกล่องข้อความแจ้งเตือน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- นำเข้า LIFF SDK ของ LINE -->
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-  <!-- นำเข้า Heroicons สำหรับไอคอน -->
   <script src="https://unpkg.com/heroicons@2.0.13/dist/heroicons.min.js"></script>
   <style>
     /* CSS สำหรับแสดงสถานะการโหลด */
@@ -28,22 +24,24 @@
       <input type="hidden" id="userId" name="userId">
       <input type="hidden" id="displayName" name="displayName">
 
-      <!-- แสดงข้อมูลหลัก -->
-      <div id="main-info" class="bg-slate-100 rounded shadow-sm p-6 mb-6 text-sm flex flex-col space-y-2">
-        <div class="flex items-center">
-          <strong>ชื่อ-นามสกุล:</strong>
-          <span id="name-info" class="font-medium ml-1"></span>
+      <div id="main-info" class="bg-slate-100 rounded shadow-sm p-4 mb-6 text-sm flex items-center justify-between">
+        <div class="flex flex-col space-y-2">
+          <div class="flex items-center">
+            <strong>ชื่อ-นามสกุล:</strong>
+            <span id="name-info" class="font-medium ml-1"></span>
+          </div>
+          <div class="flex items-center">
+            <strong>รหัสประจำตัว นสพ.:</strong>
+            <span id="employee-id-info" class="font-medium ml-1"></span>
+          </div>
         </div>
-        <div class="flex items-center">
-          <strong>รหัสประจำตัว นสพ.:</strong>
-          <span id="employee-id-info" class="font-medium ml-1"></span>
+        <div class="flex-shrink-0 ml-4">
+          <img id="avatar-info" src="https://placehold.co/150" alt="Profile" class="w-16 h-16 rounded-full border-2 border-slate-300 object-cover hidden">
         </div>
       </div>
 
-      <!-- ตารางแสดงข้อมูล -->
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200 rounded shadow-sm">
-          <!-- เพิ่ม rounded-t-lg ให้กับ thead -->
           <thead class="rounded-t-lg">
             <tr class="text-slate-100 text-center text-xs">
               <th class="py-2 px-4 bg-slate-800 rounded-tl-lg">สถานะ</th>
@@ -52,14 +50,11 @@
             </tr>
           </thead>
           <tbody id="data-table" class="text-slate-600 text-xs">
-            <!-- ข้อมูลการบันทึกจะแสดงที่นี่ -->
-          </tbody>
+            </tbody>
         </table>
       </div>
 
-      <!-- ตัวควบคุมการแบ่งหน้า -->
       <div id="pagination-controls" class="mt-4 text-sm flex flex-wrap justify-center"></div>
-      <!-- แสดงสถานะการโหลด -->
       <div id="loading" class="text-center text-slate-800 mt-4 text-sm">กำลังโหลด...</div>
     </div>
   </div>
@@ -91,6 +86,14 @@
         const profile = await liff.getProfile();
         document.getElementById('userId').value = profile.userId;
         document.getElementById('displayName').value = profile.displayName;
+        
+        // ดึงรูปภาพโปรไฟล์จาก LINE และแสดงผล
+        if (profile.pictureUrl) {
+          const avatarImg = document.getElementById('avatar-info');
+          avatarImg.src = profile.pictureUrl;
+          avatarImg.classList.remove('hidden'); // แสดงรูปภาพเมื่อโหลด URL สำเร็จ
+        }
+
         fetchData(profile.userId);
       } catch (error) {
         console.error('Error getting profile data:', error);
